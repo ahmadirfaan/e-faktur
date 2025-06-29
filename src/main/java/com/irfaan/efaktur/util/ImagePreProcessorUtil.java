@@ -18,15 +18,14 @@ public class ImagePreProcessorUtil {
         BufferedImage resized = new BufferedImage(
                 scaled.getWidth(null),
                 scaled.getHeight(null),
-                BufferedImage.TYPE_BYTE_GRAY
+                BufferedImage.TYPE_INT_RGB
         );
         Graphics2D g2d = resized.createGraphics();
         g2d.drawImage(scaled, 0, 0, null);
         g2d.dispose();
 
-        // 2. Grayscale
         BufferedImage grayImage = new BufferedImage(
-                resized.getWidth(), resized.getHeight(), BufferedImage.TYPE_INT_RGB);
+                resized.getWidth(), resized.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
         Graphics g = grayImage.getGraphics();
         g.drawImage(resized, 0, 0, null);
         g.dispose();

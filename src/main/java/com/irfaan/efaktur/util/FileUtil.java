@@ -24,7 +24,9 @@ public class FileUtil {
 
     public String readFile(MultipartFile file) throws Exception {
         String filename = file.getOriginalFilename();
-        if (filename == null) throw new IllegalArgumentException("Filename cannot be null");
+        if (filename == null) {
+            throw new IllegalArgumentException("Filename cannot be null");
+        };
 
         String extension = getExtension(filename).toLowerCase();
 

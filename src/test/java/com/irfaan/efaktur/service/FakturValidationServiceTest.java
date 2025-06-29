@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,7 @@ class FakturValidationServiceTest {
     @Autowired
     private FakturValidationService fakturValidationService;
 
-    @MockBean
+    @SpyBean
     private FileUtil fileUtil;
 
     @Test
@@ -56,8 +57,7 @@ class FakturValidationServiceTest {
                 Slamet Aman Sentosa
                 """;
 
-        Mockito.when(fileUtil.readFile(Mockito.any()))
-                .thenReturn(text);
+        Mockito.doReturn(text).when(fileUtil).readFile(Mockito.any());
         try (MockedStatic<QrExtractor> qrExtractorMockedStatic = Mockito.mockStatic(QrExtractor.class)) {
             qrExtractorMockedStatic.when(() -> QrExtractor.extractQrUrl(Mockito.any(MultipartFile.class)))
                     .thenReturn(Optional.of("http://localhost:3000/mock-online-pajak"));
@@ -67,6 +67,23 @@ class FakturValidationServiceTest {
             Assertions.assertEquals(HttpStatus.OK, responsePayloadResponseEntity.getStatusCode());
             ResponsePayload body = responsePayloadResponseEntity.getBody();
             Assertions.assertEquals(EFakturStatus.VALIDATED_SUCCESSFULLY, body.getStatus());
+        }
+
+
+    }
+
+    @Test
+    void testProcessingFakturFromFile() throws Exception {
+        MultipartFile file = TestingUtil.generateFileMock("mock-faktur-pajak.jpg");
+        try (MockedStatic<QrExtractor> qrExtractorMockedStatic = Mockito.mockStatic(QrExtractor.class)) {
+            qrExtractorMockedStatic.when(() -> QrExtractor.extractQrUrl(Mockito.any(MultipartFile.class)))
+                    .thenReturn(Optional.of("http://localhost:3000/mock-online-pajak"));
+
+            ResponseEntity<ResponsePayload> responsePayloadResponseEntity = fakturValidationService.processingEfaktur(file);
+
+            Assertions.assertEquals(HttpStatus.OK, responsePayloadResponseEntity.getStatusCode());
+            ResponsePayload body = responsePayloadResponseEntity.getBody();
+            Assertions.assertEquals(EFakturStatus.VALIDATED_WITH_DEVIATIONS, body.getStatus());
         }
 
 
