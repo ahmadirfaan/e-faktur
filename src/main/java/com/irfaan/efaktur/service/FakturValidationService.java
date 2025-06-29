@@ -54,7 +54,7 @@ public class FakturValidationService {
             return ResponseEntity.ok(validateElectronicFaktur(pdfData, resultFromApi));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponsePayload.error("Failed to validate: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponsePayload.error("Failed to validate faktur: " + e.getMessage()));
         }
     }
 
@@ -122,7 +122,7 @@ public class FakturValidationService {
             validatedData.setTanggalFaktur(resultDjp);
         } else if (KeyElectronicFaktur.nomorFaktur == keyElectronicFaktur) {
             validatedData.setNomorFaktur(resultDjp);
-        } else if (KeyElectronicFaktur.jumlahPPn == keyElectronicFaktur) {
+        } else if (KeyElectronicFaktur.jumlahPpn == keyElectronicFaktur) {
             validatedData.setJumlahPpn(resultDjp);
         } else if (KeyElectronicFaktur.jumlahDpp == keyElectronicFaktur) {
             validatedData.setJumlahDpp(resultDjp);

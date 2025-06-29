@@ -9,8 +9,8 @@ import java.io.InputStream;
 
 public class TestingUtil {
 
-    public static MultipartFile generateFileMock() {
-        ClassPathResource resource = new ClassPathResource("mock-faktur-pajak.jpg");
+    public static MultipartFile generateFileMock(String fileName) {
+        ClassPathResource resource = new ClassPathResource(fileName);
         InputStream inputStream;
         try {
             inputStream = resource.getInputStream();

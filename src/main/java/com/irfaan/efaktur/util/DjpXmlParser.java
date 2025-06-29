@@ -25,7 +25,7 @@ public class DjpXmlParser {
         map.put(KeyElectronicFaktur.nomorFaktur, getText(doc, KeyElectronicFaktur.nomorFaktur.name()));
         map.put(KeyElectronicFaktur.tanggalFaktur, getText(doc, KeyElectronicFaktur.tanggalFaktur.name()));
         map.put(KeyElectronicFaktur.jumlahDpp, getText(doc, KeyElectronicFaktur.jumlahDpp.name()));
-        map.put(KeyElectronicFaktur.jumlahPPn, getText(doc, KeyElectronicFaktur.jumlahPPn.name()));
+        map.put(KeyElectronicFaktur.jumlahPpn, getText(doc, KeyElectronicFaktur.jumlahPpn.name()));
 
         return map;
     }

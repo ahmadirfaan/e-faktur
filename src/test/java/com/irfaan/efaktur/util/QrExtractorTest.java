@@ -14,7 +14,7 @@ class QrExtractorTest {
     @Test
     void testQRCodeFromImage() {
 
-        MultipartFile multipartFile = TestingUtil.generateFileMock();
+        MultipartFile multipartFile = TestingUtil.generateFileMock("mock-faktur-pajak.jpg");
 
         Optional<String> optionalUrl = QrExtractor.extractQrUrl(multipartFile);
 
