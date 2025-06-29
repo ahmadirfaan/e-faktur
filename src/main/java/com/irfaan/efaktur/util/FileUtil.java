@@ -72,7 +72,7 @@ public class FileUtil {
         return tesseract.doOCR(image);
     }
 
-    private static String getExtension(String filename) {
+    public static String getExtension(String filename) {
         int lastDot = filename.lastIndexOf('.');
         if (lastDot == -1) {
             return "";

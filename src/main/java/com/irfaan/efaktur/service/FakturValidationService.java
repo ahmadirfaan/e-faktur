@@ -42,7 +42,7 @@ public class FakturValidationService {
             }
 
 
-            Map<KeyElectronicFaktur, String> resultFromApi = generateDataFromAPI(file.getInputStream());
+            Map<KeyElectronicFaktur, String> resultFromApi = generateDataFromAPI(file);
             return ResponseEntity.ok(validateElectronicFaktur(pdfData, resultFromApi));
 
         } catch (Exception e) {
@@ -130,11 +130,11 @@ public class FakturValidationService {
 
     }
 
-    private Map<KeyElectronicFaktur, String> generateDataFromAPI(InputStream inputStream) {
+    private Map<KeyElectronicFaktur, String> generateDataFromAPI(MultipartFile file) {
 
         try {
             // QR Code extraction
-            var optionalQrUrl = QrExtractor.extractQrUrl(inputStream);
+            var optionalQrUrl = QrExtractor.extractQrUrl(file);
             if (optionalQrUrl.isEmpty()) {
                 return Collections.emptyMap();
             }
