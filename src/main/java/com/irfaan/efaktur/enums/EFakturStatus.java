@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 public enum EFakturStatus {
 
-    VALIDATED_WITH_DEVIATIONS, VALIDATED_SUCCESSFULLY;
+    VALIDATED_WITH_DEVIATIONS, VALIDATED_SUCCESSFULLY, ERROR;
 
     @JsonValue
     public String toJson() {

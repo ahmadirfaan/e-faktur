@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RequestMapping("/efaktur")
+@RestController
 public class FakturController {
 
     @Autowired
@@ -17,7 +19,6 @@ public class FakturController {
 
     @PostMapping
     public ResponseEntity<ResponsePayload> validate(@RequestParam("file") MultipartFile file) {
-        ResponsePayload result = fakturValidationService.processingEfaktur(file);
-        return ResponseEntity.ok(result);
+        return fakturValidationService.processingEfaktur(file);
     }
 }

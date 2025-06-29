@@ -14,7 +14,14 @@ public class ResponsePayload {
     private String message;
 
     @JsonProperty("validation_results")
-    private List<ValidationResult> validationResults;
+    private ValidationResult validationResults;
+
+    public static ResponsePayload error(String message) {
+        ResponsePayload responsePayload = new ResponsePayload();
+        responsePayload.setStatus(EFakturStatus.ERROR);
+        responsePayload.setMessage(message);
+        return responsePayload;
+    }
 
 
 }

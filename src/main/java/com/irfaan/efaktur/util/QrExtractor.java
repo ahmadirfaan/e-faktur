@@ -11,10 +11,11 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.Optional;
 
 public class QrExtractor {
 
-    public static String extractQrUrl(InputStream pdfStream) {
+    public static Optional<String> extractQrUrl(InputStream pdfStream) {
         try (PDDocument document = PDDocument.load(pdfStream)) {
             PDFRenderer renderer = new PDFRenderer(document);
             BufferedImage image = renderer.renderImageWithDPI(0, 300); // page 0
@@ -23,9 +24,9 @@ public class QrExtractor {
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
             Result result = new MultiFormatReader().decode(bitmap);
-            return result.getText();
+            return Optional.ofNullable(result.getText());
         } catch (Exception e) {
-            return null;
+            return Optional.empty();
         }
     }
 }

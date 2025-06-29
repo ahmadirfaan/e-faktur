@@ -7,7 +7,7 @@ public class ValidatedData {
 
     private String npwpPenjual;
 
-    private String npwpPembeli;
+    private String namaPenjual;
 
     private String npwpLawanTransaksi;
 
