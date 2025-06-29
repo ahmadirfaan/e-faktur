@@ -2,6 +2,7 @@ package com.irfaan.efaktur.util;
 
 import com.irfaan.efaktur.tessdata.TessDataLoader;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class FileUtil {
 
     public static File tessdataDir;
@@ -84,7 +86,7 @@ public class FileUtil {
     public void initTessdata() {
         try {
             tessdataDir = TessDataLoader.prepareTessdata();
-            System.out.println("Tessdata prepared at: " + tessdataDir.getAbsolutePath());
+            log.info("Tessdata prepared at: " + tessdataDir.getAbsolutePath());
         } catch (IOException e) {
             throw new IllegalStateException("Failed to extract tessdata", e);
         }
