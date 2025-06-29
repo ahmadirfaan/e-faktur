@@ -17,7 +17,7 @@ public class FakturController {
 
     @PostMapping
     public ResponseEntity<ResponsePayload> validate(@RequestParam("file") MultipartFile file) {
-        ResponsePayload result = fakturValidationService.validateEfaktur(file);
+        ResponsePayload result = fakturValidationService.processingEfaktur(file);
         return ResponseEntity.ok(result);
     }
 }
