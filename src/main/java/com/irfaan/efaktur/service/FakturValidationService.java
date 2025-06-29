@@ -12,6 +12,8 @@ import com.irfaan.efaktur.util.FakturPdfParser;
 import com.irfaan.efaktur.util.FileUtil;
 import com.irfaan.efaktur.util.QrExtractor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -25,12 +27,19 @@ import java.util.*;
 @Slf4j
 public class FakturValidationService {
 
+    final FileUtil fileUtil;
+
+    @Autowired
+    public FakturValidationService(FileUtil fileUtil) {
+        this.fileUtil = fileUtil;
+    }
+
 
     public ResponseEntity<ResponsePayload> processingEfaktur(MultipartFile file) {
         try {
             // Step 1: Parse PDF
 
-            String extractedText = FileUtil.extractTextByType(file);
+            String extractedText = fileUtil.readFile(file);
             if (!StringUtils.hasText(extractedText)) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf file is empty"));
             }

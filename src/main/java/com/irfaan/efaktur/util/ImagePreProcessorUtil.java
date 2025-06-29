@@ -9,16 +9,16 @@ import java.io.IOException;
 public class ImagePreProcessorUtil {
 
     public static BufferedImage optimizeForOCR(BufferedImage input) throws IOException {
-        int scaleFactor = 2;
+        int scaleFactor = 5;
         Image scaled = input.getScaledInstance(
                 input.getWidth() * scaleFactor,
                 input.getHeight() * scaleFactor,
-                Image.SCALE_SMOOTH
+                Image.SCALE_REPLICATE
         );
         BufferedImage resized = new BufferedImage(
                 scaled.getWidth(null),
                 scaled.getHeight(null),
-                BufferedImage.TYPE_INT_RGB
+                BufferedImage.TYPE_BYTE_GRAY
         );
         Graphics2D g2d = resized.createGraphics();
         g2d.drawImage(scaled, 0, 0, null);
@@ -26,7 +26,7 @@ public class ImagePreProcessorUtil {
 
         // 2. Grayscale
         BufferedImage grayImage = new BufferedImage(
-                resized.getWidth(), resized.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+                resized.getWidth(), resized.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics g = grayImage.getGraphics();
         g.drawImage(resized, 0, 0, null);
         g.dispose();
