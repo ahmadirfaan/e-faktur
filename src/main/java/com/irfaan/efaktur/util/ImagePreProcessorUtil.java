@@ -36,4 +36,25 @@ public class ImagePreProcessorUtil {
 
         return grayImage;
     }
+
+    public static BufferedImage resizeImage(BufferedImage originalImage, int scale) {
+
+
+        int width = originalImage.getWidth() * scale;
+        int height = originalImage.getHeight() * scale;
+
+        Image tmp = originalImage.getScaledInstance(width, height, Image.SCALE_REPLICATE);
+
+        BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = resizedImage.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+
+        return resizedImage;
+    }
+
+
+
+
+
 }
