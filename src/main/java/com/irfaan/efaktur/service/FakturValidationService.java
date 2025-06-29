@@ -7,11 +7,11 @@ import com.irfaan.efaktur.model.DeviationData;
 import com.irfaan.efaktur.model.ResponsePayload;
 import com.irfaan.efaktur.model.ValidatedData;
 import com.irfaan.efaktur.model.ValidationResult;
-import com.irfaan.efaktur.util.FakturPdfParser;
-import com.irfaan.efaktur.util.QrExtractor;
 import com.irfaan.efaktur.util.DjpXmlParser;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
+import com.irfaan.efaktur.util.FakturPdfParser;
+import com.irfaan.efaktur.util.FileUtil;
+import com.irfaan.efaktur.util.QrExtractor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -23,19 +23,19 @@ import java.io.InputStream;
 import java.util.*;
 
 @Service
+@Slf4j
 public class FakturValidationService {
 
 
     public ResponseEntity<ResponsePayload> processingEfaktur(MultipartFile file) {
         try {
             // Step 1: Parse PDF
-            var optionalTextPdf = loadPdf(file.getInputStream());
 
-            if (optionalTextPdf.isEmpty()) {
+            String extractedText = FileUtil.extractTextByType(file);
+            if (!StringUtils.hasText(extractedText)) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf file is empty"));
             }
-            var textPdf = optionalTextPdf.get();
-            var pdfData = FakturPdfParser.extractFields(textPdf);
+            var pdfData = FakturPdfParser.extractFields(extractedText);
 
             if (CollectionUtils.isEmpty(pdfData)) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf text is empty"));
@@ -43,9 +43,7 @@ public class FakturValidationService {
 
 
             Map<KeyElectronicFaktur, String> resultFromApi = generateDataFromAPI(file.getInputStream());
-
             return ResponseEntity.ok(validateElectronicFaktur(pdfData, resultFromApi));
-
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(ResponsePayload.error("Failed to validate: " + e.getMessage()));
@@ -57,8 +55,26 @@ public class FakturValidationService {
         ResponsePayload responsePayload = new ResponsePayload();
         ValidationResult validationResult = new ValidationResult();
         var validatedData = new ValidatedData();
-        ArrayList<DeviationData> deviations = new ArrayList<>();
+        List<DeviationData> deviations = new ArrayList<>();
 
+        checkForDeviation(pdfData, resultFromApi, validatedData, deviations);
+        validationResult.setValidatedData(validatedData);
+        validationResult.setDeviations(deviations);
+
+
+        responsePayload.setValidationResults(validationResult);
+
+        if(CollectionUtils.isEmpty(deviations)) {
+            responsePayload.setStatus(EFakturStatus.VALIDATED_SUCCESSFULLY);
+            responsePayload.setMessage("validated success");
+        } else {
+            responsePayload.setStatus(EFakturStatus.VALIDATED_WITH_DEVIATIONS);
+            responsePayload.setMessage("there is deviations");
+        }
+        return responsePayload;
+    }
+
+    private void checkForDeviation(Map<KeyElectronicFaktur, String> pdfData, Map<KeyElectronicFaktur, String> resultFromApi, ValidatedData validatedData, List<DeviationData> deviations) {
         Arrays.stream(KeyElectronicFaktur.values()).forEach(keyElectronicFaktur -> {
 
             String textPdf = pdfData.get(keyElectronicFaktur);
@@ -90,18 +106,6 @@ public class FakturValidationService {
                 deviations.add(deviationData);
             }
         });
-        validationResult.setValidatedData(validatedData);
-        validationResult.setDeviations(deviations);
-        responsePayload.setValidationResults(validationResult);
-
-        if(CollectionUtils.isEmpty(deviations)) {
-            responsePayload.setStatus(EFakturStatus.VALIDATED_SUCCESSFULLY);
-            responsePayload.setMessage("validated success");
-        } else {
-            responsePayload.setStatus(EFakturStatus.VALIDATED_WITH_DEVIATIONS);
-            responsePayload.setMessage("there is deviations");
-        }
-        return responsePayload;
     }
 
     private void setValidatedData(ValidatedData validatedData, KeyElectronicFaktur keyElectronicFaktur, String resultDjp) {
@@ -135,22 +139,17 @@ public class FakturValidationService {
                 return Collections.emptyMap();
             }
 
+            String url = optionalQrUrl.get();
+            log.info("url text: " + url);
+
             //Fetch DJP XML
-            String xmlContent = new RestTemplate().getForObject(optionalQrUrl.get(), String.class);
+            String xmlContent = new RestTemplate().getForObject(url, String.class);
             //Parse XML
             return DjpXmlParser.parse(xmlContent);
         } catch (Exception e) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
 
     }
 
-    private Optional<String> loadPdf(InputStream inputStream) {
-        try (PDDocument document = PDDocument.load(inputStream)) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            return Optional.of(stripper.getText(document));
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
 }

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-@RequestMapping("/efaktur")
+@RequestMapping("/validate-efaktur")
 @RestController
 public class FakturController {
 
