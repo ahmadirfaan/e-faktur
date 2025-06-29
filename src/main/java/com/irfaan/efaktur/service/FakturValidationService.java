@@ -45,7 +45,9 @@ public class FakturValidationService {
             }
             var pdfData = FakturPdfParser.extractFields(extractedText);
 
-            if (CollectionUtils.isEmpty(pdfData)) {
+            if (CollectionUtils.isEmpty(pdfData) ||
+                    pdfData.values().stream().allMatch(org.apache.commons.lang3.StringUtils::isBlank)
+            ) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf text is empty"));
             }
 
