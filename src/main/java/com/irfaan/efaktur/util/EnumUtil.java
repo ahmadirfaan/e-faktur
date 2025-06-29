@@ -6,8 +6,7 @@ public class EnumUtil {
 
     public static String toSnakeCase(String input) {
         return StringUtils.join(
-                StringUtils.splitByCharacterTypeCamelCase(input),
-                "_"
+                StringUtils.splitByCharacterTypeCamelCase(input)
         ).toLowerCase();
     }
 }

@@ -14,17 +14,34 @@ public class FakturPdfParser {
 
     public static Map<KeyElectronicFaktur, String> extractFields(String text) {
         Map<KeyElectronicFaktur, String> result = new HashMap<>();
-        result.put(KeyElectronicFaktur.npwpPenjual, match(text, "Pengusaha Kena Pajak\\s*NPWP\\s*[:：]\\s*(\\d{15})"));
-        result.put(KeyElectronicFaktur.namaPenjual, match(text, "Pengusaha Kena Pajak.*?Nama\\s*[:：]\\s*(.+?)\\n"));
-        result.put(KeyElectronicFaktur.npwpPembeli, match(text, "Pembeli\\s*NPWP\\s*[:：]\\s*(\\d{15})"));
-        result.put(KeyElectronicFaktur.namaPembeli, match(text, "Pembeli.*?Nama\\s*[:：]\\s*(.+?)\\n"));
-        result.put(KeyElectronicFaktur.nomorFaktur, match(text, "Nomor Seri Faktur Pajak\\s*[:：]\\s*(\\d{16})"));
-        result.put(KeyElectronicFaktur.tanggalFaktur, match(text, "\\b\\p{L}+,?\\s+(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})"));
-        result.put(KeyElectronicFaktur.jumlahDpp, match(text, "Dasar Pengenaan Pajak\\s*[:：]\\s*([\\d.,]+)"));
-        result.put(KeyElectronicFaktur.jumlahPPn, match(text, "PPN\\s*[:：]\\s*([\\d.,]+)"));
+
+        result.put(KeyElectronicFaktur.nomorFaktur,
+                match(text, "Kode dan Nomor Seri Faktur Pajak\\s*[:：]\\s*(\\d{3}\\.\\d{3}-\\d{2}\\.\\d{8})"));
+
+        result.put(KeyElectronicFaktur.npwpPenjual,
+                match(text, "NPWP\\s*[:：]\\s*(\\d{2}\\.\\d{3}\\.\\d{3}\\.\\d-\\d{3}\\.\\d{3})"));
+
+        result.put(KeyElectronicFaktur.namaPenjual,
+                match(text, "Nama\\s*[:：]\\s*(PT\\s+.*?)(?=\\s*Alamat)"));
+
+        result.put(KeyElectronicFaktur.npwpPembeli,
+                match(text, "Pembeli.*?NPWP\\s*[:：]\\s*(\\d{2}\\.\\d{3}\\.\\d{3}\\.\\d-\\d{3}\\.\\d{3})"));
+
+        result.put(KeyElectronicFaktur.namaPembeli,
+                match(text, "Pembeli.*?Nama\\s*[:：]\\s*(PT\\s+.*?)(?=\\s+NIK|\\s+Alamat|\\n)"));
+
+        result.put(KeyElectronicFaktur.tanggalFaktur,
+                match(text, "[A-Z ]+,\\s*(\\d{1,2}\\s+[A-Z]+\\s+\\d{4})"));
+
+        result.put(KeyElectronicFaktur.jumlahDpp,
+                match(text, "\\b(Rp|RP)?\\s?([\\d\\.]+,[\\d]{2})\\b.*?(?=\\s*Dikurangi|\\s*PPN|\\s*Total)"));
+
+        result.put(KeyElectronicFaktur.jumlahPPn,
+                match(text, "Total\\s*PPN\\s*:?\\s*([\\d\\.]+,[\\d]{2})"));
 
         if (result.containsKey(KeyElectronicFaktur.tanggalFaktur)) {
-            result.put(KeyElectronicFaktur.tanggalFaktur, parseTanggalFaktur(result.get(KeyElectronicFaktur.tanggalFaktur)));
+            result.put(KeyElectronicFaktur.tanggalFaktur,
+                    parseTanggalFaktur(result.get(KeyElectronicFaktur.tanggalFaktur)));
         }
 
         return result;
@@ -46,4 +63,5 @@ public class FakturPdfParser {
             return null;
         }
     }
+
 }
