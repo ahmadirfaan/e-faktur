@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,36 +19,40 @@ public class QrExtractor {
 
     public static Optional<String> extractQrUrl(MultipartFile file) {
 
-        try (InputStream in = file.getInputStream()) {
-            if (!isPdfFile(in)) {
-                BufferedImage image = ImageIO.read(file.getInputStream());
-                ImageIO.write(image, "png", new File("debug-ocr-not-pdf-file.png"));
+        try (BufferedInputStream bufferedStream = new BufferedInputStream(file.getInputStream())) {
+
+            if (!isPdfFile(bufferedStream)) {
+                BufferedImage image = ImageIO.read(bufferedStream);
+                ImageIO.write(image, "png", new File("debug-ocr-not-pdf.png"));
                 return tryDecodeQrFromImage(image);
             }
 
-            try (PDDocument document = PDDocument.load(file.getInputStream())) {
+            try (PDDocument document = PDDocument.load(bufferedStream)) {
                 PDFRenderer renderer = new PDFRenderer(document);
 
                 for (int page = 0; page < document.getNumberOfPages(); page++) {
                     BufferedImage image = renderer.renderImageWithDPI(page, 300);
 
-                    Optional<String> result = tryDecodeQrFromImage(image);
-                    if (result.isPresent()) return result;
+                    ImageIO.write(image, "png", new File("debug-ocr-full.png"));
 
-                    int w = image.getWidth(), h = image.getHeight();
-                    BufferedImage cropped = image.getSubimage(w / 10, h - h / 3, w / 3, h / 3);
-                    result = tryDecodeQrFromImage(cropped);
+                    Optional<String> result = tryDecodeQrFromImage(image);
                     if (result.isPresent()) {
                         return result;
                     }
 
-                    ImageIO.write(image, "png", new File("debug-ocr-full.png"));
+                    int width = image.getWidth();
+                    int height = image.getHeight();
+                    BufferedImage cropped = image.getSubimage(width / 10, height - height / 3, width / 3, height / 3);
                     ImageIO.write(cropped, "png", new File("debug-ocr-cropped.png"));
-
+                    result = tryDecodeQrFromImage(cropped);
+                    if (result.isPresent()) {
+                        return result;
+                    }
                 }
             }
+
         } catch (Exception e) {
-            e.printStackTrace(); // log saat dev
+            e.printStackTrace();
         }
 
         return Optional.empty();
@@ -70,11 +75,12 @@ public class QrExtractor {
     }
 
 
-    private static boolean isPdfFile(InputStream stream) throws IOException {
-        stream.mark(4);
+    private static boolean isPdfFile(InputStream inputStream) throws IOException {
+        BufferedInputStream bis = new BufferedInputStream(inputStream);
+        bis.mark(4);
         byte[] header = new byte[4];
-        stream.read(header);
-        stream.reset();
+        bis.read(header);
+        bis.reset();
         return new String(header).startsWith("%PDF");
     }
 }
