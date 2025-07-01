@@ -1,7 +1,12 @@
 package com.irfaan.efaktur.configuration;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.openblas.global.openblas;
+import org.bytedeco.opencv.global.opencv_core;
+import org.opencv.core.Core;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +27,11 @@ public class OCRConfig {
     public Tesseract tesseract(@Qualifier(value = "tessDataDir") File tessDataDir) {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath(tessDataDir.getAbsolutePath());
-        tesseract.setLanguage("ind");
+        tesseract.setLanguage("ind+eng");
         tesseract.setOcrEngineMode(1);
         tesseract.setTessVariable("tessedit_pageseg_mode", "6");
+        tesseract.setTessVariable("user_defined_dpi", "300");
+        tesseract.setPageSegMode(1);
         return tesseract;
     }
 
@@ -35,8 +42,23 @@ public class OCRConfig {
         Files.createDirectories(tessdataDir);
 
         copyResourceToFile(tessdataDir.resolve("ind.traineddata"));
+        copyResourceToFile(tessdataDir.resolve("eng.traineddata"));
 
         return tessdataDir.toFile();
+    }
+
+    @PostConstruct
+    public void loadOpenCV() {
+        String lib = Core.NATIVE_LIBRARY_NAME;
+        log.info("Trying to load OpenCV lib: {}", lib);
+        try {
+            Loader.load(openblas.class);
+            Loader.load(opencv_core.class);
+            log.info("✅ OpenCV loaded successfully: {}", lib);
+        } catch (UnsatisfiedLinkError e) {
+            log.error("Failed to load OpenCV library: " + e.getMessage());
+            throw e;
+        }
     }
 
     private static void copyResourceToFile(Path outputPath) throws IOException {

@@ -11,7 +11,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,7 +72,7 @@ class FakturValidationServiceTest {
     }
 
     @Test
-    void testProcessingFakturFromFile() throws Exception {
+    void testProcessingFakturFromFile() {
         MultipartFile file = TestingUtil.generateFileMock("mock-faktur-pajak.jpg");
         try (MockedStatic<QrExtractor> qrExtractorMockedStatic = Mockito.mockStatic(QrExtractor.class)) {
             qrExtractorMockedStatic.when(() -> QrExtractor.extractQrUrl(Mockito.any(MultipartFile.class)))

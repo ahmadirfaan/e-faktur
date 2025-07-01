@@ -24,10 +24,10 @@ public class QrExtractor {
 
     public static Optional<String> extractQrUrl(MultipartFile file) {
         try (BufferedInputStream bufferedStream = new BufferedInputStream(file.getInputStream())) {
-            bufferedStream.mark(0x100000); // mark stream awal (1MB)
+            bufferedStream.mark(0x100000);
 
             if (!isPdfFile(bufferedStream)) {
-                bufferedStream.reset(); // rewind ke awal
+                bufferedStream.reset();
                 BufferedImage image = ImageIO.read(bufferedStream);
                 if (image == null) {
                     log.error("ImageIO.read() returned null, file is not a valid image.");
@@ -37,7 +37,7 @@ public class QrExtractor {
                 return tryDecodeQrFromImage(formattedImage);
             }
 
-            bufferedStream.reset(); // rewind ke awal sebelum load PDF
+            bufferedStream.reset();
             try (PDDocument document = PDDocument.load(bufferedStream)) {
                 PDFRenderer renderer = new PDFRenderer(document);
 
@@ -65,7 +65,7 @@ public class QrExtractor {
         return Optional.empty();
     }
 
-    private static BufferedImage formatImage(BufferedImage originalImage) throws IOException {
+    private static BufferedImage formatImage(BufferedImage originalImage)  {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         int cropX = (int) (width * 0.03);
