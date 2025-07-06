@@ -56,7 +56,7 @@ class FakturValidationServiceTest {
                 Slamet Aman Sentosa
                 """;
 
-        Mockito.doReturn(text).when(fileUtil).readFile(Mockito.any());
+        Mockito.doReturn(text).when(fileUtil).doOcr(Mockito.any());
         try (MockedStatic<QrExtractor> qrExtractorMockedStatic = Mockito.mockStatic(QrExtractor.class)) {
             qrExtractorMockedStatic.when(() -> QrExtractor.extractQrUrl(Mockito.any(MultipartFile.class)))
                     .thenReturn(Optional.of("http://localhost:3000/mock-online-pajak"));

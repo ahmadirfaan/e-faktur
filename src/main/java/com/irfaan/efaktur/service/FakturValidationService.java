@@ -7,10 +7,7 @@ import com.irfaan.efaktur.model.DeviationData;
 import com.irfaan.efaktur.model.ResponsePayload;
 import com.irfaan.efaktur.model.ValidatedData;
 import com.irfaan.efaktur.model.ValidationResult;
-import com.irfaan.efaktur.util.DjpXmlParser;
-import com.irfaan.efaktur.util.FakturPdfParser;
-import com.irfaan.efaktur.util.FileUtil;
-import com.irfaan.efaktur.util.QrExtractor;
+import com.irfaan.efaktur.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,7 +18,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -39,11 +41,15 @@ public class FakturValidationService {
         try {
             // Step 1: Parse PDF
 
-            String extractedText = fileUtil.readFile(file);
-            if (!StringUtils.hasText(extractedText)) {
+            BufferedImage image = fileUtil.convertToImage(file);
+            if (image == null) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf file is empty"));
             }
-            var pdfData = FakturPdfParser.extractFields(extractedText);
+
+            Map<KeyElectronicFaktur, String> pdfData = new HashMap<>();
+            List<BufferedImage> bufferedImages = fileUtil.convertInto3PartImage(image);
+            bufferedImages = bufferedImages.stream().map(rawImage -> ImagePreProcessorUtil.resizeImage(rawImage, 20)).toList();
+            bufferedImages.forEach(bufferedImage -> pdfData.putAll(extractImageIntoText(file, bufferedImage)));
 
             if (CollectionUtils.isEmpty(pdfData) ||
                     pdfData.values().stream().allMatch(org.apache.commons.lang3.StringUtils::isBlank)
@@ -60,6 +66,16 @@ public class FakturValidationService {
         }
     }
 
+    private Map<KeyElectronicFaktur, String> extractImageIntoText(MultipartFile file, BufferedImage bufferedImage) {
+        try {
+            ImageIO.write(bufferedImage, "jpg", new File(System.currentTimeMillis() + file.getOriginalFilename()));
+        } catch (IOException e) {
+            return Collections.emptyMap();
+        }
+        String textFile = fileUtil.doOcr(bufferedImage);
+        return FakturPdfParser.extractFields(textFile);
+    }
+
     private ResponsePayload validateElectronicFaktur(Map<KeyElectronicFaktur, String> pdfData, Map<KeyElectronicFaktur, String> resultFromApi) {
 
         ResponsePayload responsePayload = new ResponsePayload();
@@ -74,7 +90,7 @@ public class FakturValidationService {
 
         responsePayload.setValidationResults(validationResult);
 
-        if(CollectionUtils.isEmpty(deviations)) {
+        if (CollectionUtils.isEmpty(deviations)) {
             responsePayload.setStatus(EFakturStatus.VALIDATED_SUCCESSFULLY);
             responsePayload.setMessage("validated success");
         } else {

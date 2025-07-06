@@ -28,9 +28,9 @@ public class OCRConfig {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath(tessDataDir.getAbsolutePath());
         tesseract.setLanguage("ind+eng");
+        tesseract.setPageSegMode(6);
         tesseract.setOcrEngineMode(1);
-        tesseract.setTessVariable("tessedit_pageseg_mode", "6");
-        tesseract.setTessVariable("user_defined_dpi", "300");
+        tesseract.setVariable("user_defined_dpi", "500");
         tesseract.setPageSegMode(1);
         return tesseract;
     }
