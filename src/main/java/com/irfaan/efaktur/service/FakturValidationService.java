@@ -9,12 +9,12 @@ import com.irfaan.efaktur.model.ValidatedData;
 import com.irfaan.efaktur.model.ValidationResult;
 import com.irfaan.efaktur.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,13 +23,18 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
 public class FakturValidationService {
 
     final FileUtil fileUtil;
+
+    @Autowired
+    private ThreadPoolTaskExecutor imageThreadPoolTaskExecutor;
 
     @Autowired
     public FakturValidationService(FileUtil fileUtil) {
@@ -46,13 +51,31 @@ public class FakturValidationService {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf file is empty"));
             }
 
-            Map<KeyElectronicFaktur, String> pdfData = new HashMap<>();
+            Map<KeyElectronicFaktur, String> pdfData = new ConcurrentHashMap<>();
             List<BufferedImage> bufferedImages = fileUtil.convertInto3PartImage(image);
-            bufferedImages = bufferedImages.stream().map(rawImage -> ImagePreProcessorUtil.resizeImage(rawImage, 20)).toList();
-            bufferedImages.forEach(bufferedImage -> pdfData.putAll(extractImageIntoText(file, bufferedImage)));
+            List<Future<String>> futureTexts = new ArrayList<>();
+            bufferedImages.forEach(
+                    bufferedImage -> {
+                        Future<String> futureText = imageThreadPoolTaskExecutor.submit(
+                                () -> extractValueFromImage(file, bufferedImage, pdfData)
+                        );
+                        futureTexts.add(futureText);
+                    }
+            );
+
+            List<String> texts = futureTexts.stream().map(future -> {
+                try {
+                    return future.get(1000, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    log.error("Error processing image: " + e.getMessage());
+                    return null;
+                }
+            }).filter(StringUtils::isNotBlank).toList();
+
+            texts.forEach(text -> pdfData.putAll(FakturPdfParser.extractFields(text)));
 
             if (CollectionUtils.isEmpty(pdfData) ||
-                    pdfData.values().stream().allMatch(org.apache.commons.lang3.StringUtils::isBlank)
+                    pdfData.values().stream().allMatch(StringUtils::isBlank)
             ) {
                 return ResponseEntity.badRequest().body(ResponsePayload.error("pdf text is empty"));
             }
@@ -66,14 +89,19 @@ public class FakturValidationService {
         }
     }
 
-    private Map<KeyElectronicFaktur, String> extractImageIntoText(MultipartFile file, BufferedImage bufferedImage) {
+    private String extractValueFromImage(MultipartFile file, BufferedImage bufferedImage, Map<KeyElectronicFaktur, String> pdfData) {
+        BufferedImage bufferedImageResize = ImagePreProcessorUtil.resizeImage(bufferedImage, 20);
+        return extractImageIntoText(file.getOriginalFilename(), bufferedImageResize);
+
+    }
+
+    private String extractImageIntoText(String originalFileName, BufferedImage bufferedImage) {
         try {
-            ImageIO.write(bufferedImage, "jpg", new File(System.currentTimeMillis() + file.getOriginalFilename()));
+            ImageIO.write(bufferedImage, "jpg", new File(System.currentTimeMillis() + originalFileName));
         } catch (IOException e) {
-            return Collections.emptyMap();
+            return null;
         }
-        String textFile = fileUtil.doOcr(bufferedImage);
-        return FakturPdfParser.extractFields(textFile);
+        return fileUtil.doOcr(bufferedImage);
     }
 
     private ResponsePayload validateElectronicFaktur(Map<KeyElectronicFaktur, String> pdfData, Map<KeyElectronicFaktur, String> resultFromApi) {
@@ -106,7 +134,7 @@ public class FakturValidationService {
             String textPdf = pdfData.get(keyElectronicFaktur);
             String resultDjp = resultFromApi.get(keyElectronicFaktur);
 
-            if (StringUtils.hasText(resultDjp)) {
+            if (StringUtils.isNotBlank(resultDjp)) {
                 setValidatedData(validatedData, keyElectronicFaktur, resultDjp);
             }
 

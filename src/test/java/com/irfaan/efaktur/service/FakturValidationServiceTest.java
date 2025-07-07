@@ -29,7 +29,7 @@ class FakturValidationServiceTest {
     private FileUtil fileUtil;
 
     @Test
-    void testProcessingFakturFromMock() throws Exception {
+    void testProcessingFakturFromMock() {
         MultipartFile file = TestingUtil.generateFileMock("mock-faktur-pajak.jpg");
         String text = """
                 Kode dan Nomor Seri Faktur Pajak : 070.000-22.12345678
